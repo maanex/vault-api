@@ -26,3 +26,28 @@ Idea being that you can host this on a device that's not your main workstation.
 - More apis: tbd
 - MCP / RAG endpoints
 - Proactive daily summaries, e.g. create and push a daily digest note (also llm powered probably)
+
+
+## Runtime Configuration
+
+At container runtime, provide only these env vars for LiveSync configuration:
+
+- `LIVESYNC_COUCHDB_URI`
+- `LIVESYNC_COUCHDB_USER`
+- `LIVESYNC_COUCHDB_PASSWORD`
+- `LIVESYNC_COUCHDB_DBNAME`
+- `LIVESYNC_PASSPHRASE`
+
+The container entrypoint generates `/app/livesync.conf.json` from those env vars and starts the LiveSync CLI automatically.
+
+Example:
+
+```bash
+docker run --rm -p 3063:3063 \
+	-e LIVESYNC_COUCHDB_URI="http://couchdb:5984" \
+	-e LIVESYNC_COUCHDB_USER="admin" \
+	-e LIVESYNC_COUCHDB_PASSWORD="secret" \
+	-e LIVESYNC_COUCHDB_DBNAME="obsidian-livesync" \
+	-e LIVESYNC_PASSPHRASE="your-passphrase" \
+	ghcr.io/maanex/vault-api:main
+```
