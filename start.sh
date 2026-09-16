@@ -44,7 +44,13 @@ const settings = {
 writeFileSync(`${vaultDir}/.livesync/settings.json`, JSON.stringify(settings, null, 2), "utf-8");
 '
 
-# Start the LiveSync continuous synchronization daemon
+# 1. Pull initial database changes from CouchDB
+node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" sync || true
+
+# 2. Extract/mirror notes from the database to the filesystem
+node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" mirror "${VAULT_DIR}" || true
+
+# 3. Start the LiveSync continuous synchronization daemon
 node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" daemon &
 
 # Start the API server
