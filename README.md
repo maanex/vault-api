@@ -18,6 +18,8 @@ Idea being that you can host this on a device that's not your main workstation.
 
 **/birthdays/:MM-DD?** — Goes to your `/People` folder, searches all notes with the `birthday` property and returns all for the day.
 
+**/tasks** — Returns upcoming non-completed tasks (tagged `#task`, not in `Templates/`, with `due <= now() + 72h`), ordered by `due` ASC and `file.name` ASC. Fields returned: `name`, `due`, `category`, `folder`.
+
 
 ## Roadmap
 
@@ -40,11 +42,28 @@ At container runtime, provide only these env vars for LiveSync configuration:
 
 The container entrypoint generates `/app/livesync.conf.json` from those env vars and starts the LiveSync CLI automatically.
 
-Example:
+### Docker Compose (Recommended)
+
+1. Copy `.env.example` to `.env` and fill in your CouchDB details and encryption passphrase:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Start the service:
+   ```bash
+   docker compose up -d
+   ```
+
+The vault data and local sync cache will be persisted in the `vault_data` Docker volume.
+
+### Docker Run
 
 ```bash
-docker run --rm -p 3063:3063 \
-	-e LIVESYNC_COUCHDB_URI="http://couchdb:5984" \
+docker run -d \
+	--name vault-api \
+	-p 3063:3063 \
+	-v vault_data:/app/vault \
+	-e LIVESYNC_COUCHDB_URI="https://couchdb.example.com/obsidian" \
 	-e LIVESYNC_COUCHDB_USER="admin" \
 	-e LIVESYNC_COUCHDB_PASSWORD="secret" \
 	-e LIVESYNC_COUCHDB_DBNAME="obsidian-livesync" \

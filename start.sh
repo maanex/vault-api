@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-mkdir -p /app/vault
+VAULT_DIR="${VAULT_DIR:-/app/vault}"
+mkdir -p "${VAULT_DIR}/.livesync"
 
 required_vars=(
 	LIVESYNC_COUCHDB_URI
@@ -22,6 +23,8 @@ done
 bun -e '
 import { writeFileSync } from "node:fs";
 
+const vaultDir = process.env.VAULT_DIR || "/app/vault";
+
 const settings = {
 	couchDB_URI: process.env.LIVESYNC_COUCHDB_URI,
 	couchDB_USER: process.env.LIVESYNC_COUCHDB_USER,
@@ -34,14 +37,19 @@ const settings = {
 	passphrase: process.env.LIVESYNC_PASSPHRASE,
 	usePluginSync: false,
 	useIndexedDBAdapter: false,
+	disableCheckingConfigMismatch: true,
 	isConfigured: true
 };
 
-writeFileSync("/app/livesync.conf.json", JSON.stringify(settings, null, 2), "utf-8");
+writeFileSync(`${vaultDir}/.livesync/settings.json`, JSON.stringify(settings, null, 2), "utf-8");
 '
 
-cd /app/obsidian-livesync
-bun run src/apps/cli/index.ts /app/vault --settings /app/livesync.conf.json daemon &
+# Auto-resolve any potential remote lock on fresh or existing instances
+node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" mark-resolved >/dev/null 2>&1 || true
 
+# Start the LiveSync continuous synchronization daemon
+node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" daemon &
+
+# Start the API server
 cd /app
-bun run src/index.ts
+exec bun run src/index.ts

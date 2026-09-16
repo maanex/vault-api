@@ -1,0 +1,24 @@
+services:
+  vault-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vault-api
+    ports:
+      - "${PORT:-3063}:3063"
+    environment:
+      - PORT=3063
+      - VAULT_DIR=/app/vault
+      - LIVESYNC_COUCHDB_URI=${LIVESYNC_COUCHDB_URI}
+      - LIVESYNC_COUCHDB_USER=${LIVESYNC_COUCHDB_USER}
+      - LIVESYNC_COUCHDB_PASSWORD=${LIVESYNC_COUCHDB_PASSWORD}
+      - LIVESYNC_COUCHDB_DBNAME=${LIVESYNC_COUCHDB_DBNAME}
+      - LIVESYNC_PASSPHRASE=${LIVESYNC_PASSPHRASE}
+    volumes:
+      - vault_data:/app/vault
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  vault_data:
