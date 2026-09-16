@@ -1,8 +1,14 @@
-FROM oven/bun:alpine
+FROM oven/bun:1-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache git bash nodejs npm
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    bash \
+    nodejs \
+    npm \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/vrtmrz/obsidian-livesync.git \
     && cd obsidian-livesync \

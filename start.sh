@@ -44,9 +44,6 @@ const settings = {
 writeFileSync(`${vaultDir}/.livesync/settings.json`, JSON.stringify(settings, null, 2), "utf-8");
 '
 
-# Auto-resolve any potential remote lock on fresh or existing instances
-node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" mark-resolved >/dev/null 2>&1 || true
-
 # Start the LiveSync continuous synchronization daemon
 node /app/obsidian-livesync/src/apps/cli/dist/index.cjs "${VAULT_DIR}" daemon &
 
