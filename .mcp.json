@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"obsidian-vault": {
+			"url": "http://localhost:3063/mcp",
+			"type": "http"
+		}
+	}
+}
