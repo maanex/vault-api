@@ -24,17 +24,41 @@ Idea being that you can host this on a device that's not your main workstation.
 
 ---
 
-## 🤖 MCP Server & 2FA Protected Files
+## 🤖 MCP Server & Knowledge Graph Engine
 
 The `/mcp` endpoint exposes an extensible MCP server compliant with standard Model Context Protocol clients (Claude Desktop, Cursor, AI agents).
+It includes a high-performance **SQLite-backed Knowledge Graph** (inspired by `obsidian-everywhere`) and **2FA TOTP File Protection**.
 
-### Available MCP Tools
+### 🕸️ Knowledge Graph & Backlinks Engine
+* **Automatic SQLite Indexing**: Indexes markdown files into `.graph-cache/index.db` tracking notes, wikilinks, tags, aliases, and embeds.
+* **Real-time File Watcher**: Automatically triggers debounced incremental re-indexing when vault files change.
+* **Link Resolution**: Resolves Obsidian wikilinks across relative paths, exact matches, basename fallbacks, and YAML aliases.
+* **Context Bundles with Token Budgets**: Aggregates a target note with its 1-hop / 2-hop graph neighborhood (backlinks, outgoing links, embedded notes) into a LLM-ready bundle, respecting max token constraints.
 
+### 🛠️ Available MCP Tools (16 Tools)
+
+#### 🕸️ Graph Navigation & Backlinks
+* **`get_context_bundle`**: Returns an LLM-ready context bundle for a note including frontmatter, direct content, backlinks with context sentences, and 1-hop neighbors within a configurable token budget.
+* **`get_backlinks`**: Retrieves all notes linking to a target note, with exact referencing sentence contexts and anchor information.
+* **`get_outgoing_links`**: Retrieves all outgoing wikilinks and embedded notes (`![[...]`) from a target note.
+* **`get_neighborhood`**: Computes the N-hop graph neighborhood (BFS subgraph) surrounding a note up to `max_depth`.
+* **`find_path`**: Finds the shortest link path between two notes in the knowledge graph.
+* **`find_orphans`**: Lists notes that have 0 incoming and 0 outgoing links (isolated notes).
+* **`find_unresolved`**: Finds wikilinks pointing to notes that do not yet exist in the vault.
+* **`list_tags`**: Lists all unique tags across the vault with note count statistics.
+* **`get_notes_by_tag`**: Retrieves all notes tagged with a specific tag (including nested `#tag/subtag`).
+* **`vault_overview`**: Returns top-level vault statistics (note count, link count, tag count, orphan count, unresolved link count).
+
+#### 📄 Note & File Access
 * **`read_note`**: Reads complete markdown and frontmatter metadata of a specific note. Enforces 2FA protection.
 * **`search_notes`**: Searches across note content and titles. Redacts snippets for protected notes until unlocked.
 * **`list_files`**: Lists notes and directories, indicating `isProtected: true/false`.
+
+#### 📅 Productivity
 * **`get_tasks`**: Retrieves upcoming non-completed tasks due within 72 hours.
 * **`get_birthdays`**: Queries birthdays from `/People`.
+
+#### 🛡️ Security
 * **`unlock_session`**: Unlocks access to protected files for the current session using a 6-digit TOTP code.
 
 ### 🛡️ 2FA Protected Files (Blob Schema)
@@ -45,6 +69,7 @@ Configure protected file patterns in `.env` via `PROTECTED_FILE_PATTERNS` or in 
 PROTECTED_FILE_PATTERNS=Private/**,*.secret.md,Finances/**
 AUTH_TOTP_SECRET=JBSWY3DPEHPK3PXP
 AUTH_SESSION_TTL_MINUTES=5
+GRAPH_CACHE_DIR=.graph-cache
 ```
 
 When an agent tool attempts to access any file matching a protected glob pattern without an unlocked session, the server throws a standardized error:
@@ -53,11 +78,11 @@ ProtectedAccessError: Access to protected file '<path>' requires 2FA authenticat
 Please ask the user for their 6-digit authenticator code and execute the 'unlock_session' tool with the code to unlock access for this session.
 ```
 
-The user provides their standard 6-digit authenticator code (Google Authenticator, 1Password, etc.), and the agent invokes `unlock_session(code)` to unlock access for `AUTH_SESSION_TTL_MINUTES` (default: 5 minutes).
+The user provides their standard 6-digit authenticator code (Google Authenticator, 1Password, etc.), and the agent invokes `unlock_session(code)` to unlock access for `AUTH_SESSION_TTL_MINUTES` (default: 5 minutes). Note bodies and graph backlink sentences are automatically redacted until unlocked.
 
 ### ➕ Adding New Tools
 
-To add a new tool, create a new file in `src/mcp/tools/your_tool.ts` using `createTool(...)` and export it in `src/mcp/registry.ts`. All tools automatically inherit session context and security guard helpers.
+To add a new tool, create a new file in `src/mcp/tools/your_tool.ts` using `createTool(...)` and export it in `src/mcp/registry.ts`. All tools automatically inherit session context, graph engine access, and security guard helpers.
 
 
 ## Roadmap
